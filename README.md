@@ -4,7 +4,7 @@ Microservices based application sourcing SkyScanner public API for flights prici
 
 ## Components
  - `FlightRequestService` - Service managing user requests for flight
- - `GeoCatalogService`
+ - `GeoCatalogService` - Service provides access to Places that SkyScanner supports
  - `PollingService`
  - `SkyScannerService`
  - `EurecaService`

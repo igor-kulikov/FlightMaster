@@ -2,6 +2,12 @@
 applications:
 - name: FlightRequestsService
   path: FlightRequestsService\target\FlightRequestsService-0.0.1-SNAPSHOT.jar
-  memory: 1G
+  memory: 512Mb
+  services:
+  - postgresdb
+
+- name: GeoCatalogService
+  path: GeoCatalogService\target\GeoCatalogService-0.0.1-SNAPSHOT.jar
+  memory: 512Mb
   services:
   - postgresdb
