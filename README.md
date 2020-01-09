@@ -7,4 +7,4 @@ Microservices based application sourcing SkyScanner public API for flights prici
  - `GeoCatalogService` - Service provides access to Places that SkyScanner supports
  - `PollingService`
  - `SkyScannerService`
- - `EurecaService`
+ - `EurekaService` - Service Registration and Discovery
