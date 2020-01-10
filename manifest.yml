@@ -2,12 +2,17 @@
 applications:
 - name: FlightRequestsService
   path: FlightRequestsService\target\FlightRequestsService-0.0.1-SNAPSHOT.jar
-  memory: 512Mb
+  memory: 1024Mb
   services:
   - postgresdb
 
 - name: GeoCatalogService
   path: GeoCatalogService\target\GeoCatalogService-0.0.1-SNAPSHOT.jar
-  memory: 512Mb
+  memory: 1024Mb
   services:
-  - postgresdb
+    - postgresdb
+
+- name: EurekaService
+  host: eureka-test-service
+  path: EurekaService\target\EurekaService-0.0.1-SNAPSHOT.jar
+  memory: 512Mb
