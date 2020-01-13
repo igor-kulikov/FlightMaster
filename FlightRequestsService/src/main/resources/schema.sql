@@ -20,3 +20,15 @@ create table FLIGHT_REQUEST_SERVICE.FLIGHT_REQUESTS (
                                             -- and if set to false it will be obtained for one adult.
     SERIAL_POLL_PERIOD int not null default 0,           -- days number for shifting poll starting from OUTBOUND_DATE
     ENABLED_FLAG boolean not null default true);
+
+create table FLIGHT_REQUEST_SERVICE.FLIGHT_REQUEST_POLLS (
+    POLL_ID serial primary key,
+    REQUEST_ID int not null,
+    OUTBOUND_AIRPORT text not null,
+    INBOUND_AIRPORT text,
+    OUTBOUND_DATE date not null,
+    INBOUND_DATE date,
+    POLL_SEND_DT timestamp not null,
+--    RAW_RESPONSE json not null
+    foreign key (REQUEST_ID) references FLIGHT_REQUEST_SERVICE.FLIGHT_REQUESTS
+);

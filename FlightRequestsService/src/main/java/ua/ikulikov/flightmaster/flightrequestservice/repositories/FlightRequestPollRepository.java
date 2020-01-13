@@ -3,9 +3,9 @@ package ua.ikulikov.flightmaster.flightrequestservice.repositories;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequest;
+import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequestPoll;
 
 @Repository
-@EntityScan(basePackageClasses = FlightRequest.class)
-public interface JpaFlightRequestRepository extends JpaRepository<FlightRequest, Long> {
+@EntityScan(basePackageClasses = FlightRequestPoll.class)
+public interface FlightRequestPollRepository extends JpaRepository<FlightRequestPoll, Long> {
 }

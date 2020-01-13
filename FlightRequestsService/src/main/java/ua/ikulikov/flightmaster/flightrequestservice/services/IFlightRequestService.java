@@ -14,4 +14,5 @@ public interface IFlightRequestService {
     Optional<FlightRequest> setEnabledFlag(long id, boolean enabled);
     Optional<FlightRequest> disableFlightRequest(long id);
     Optional<FlightRequest> enableFlightRequest(long id);
+    void pollFlightRequest(Long flightRequestId);
 }

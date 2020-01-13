@@ -54,6 +54,11 @@ public class FlightRequestServiceController {
         return prepareResponse(flightRequestOptional, flightRequestId);
     }
 
+    @PostMapping("/poll/{flightRequestId}")
+    public void pollFlightRequest(@PathVariable Long flightRequestId) {
+	    flightRequestService.pollFlightRequest(flightRequestId);
+    }
+
     private ResponseEntity prepareResponse(Optional<FlightRequest> flightRequestOptional, Long flightRequestId) {
         if (!flightRequestOptional.isPresent())
             return ResponseEntity
