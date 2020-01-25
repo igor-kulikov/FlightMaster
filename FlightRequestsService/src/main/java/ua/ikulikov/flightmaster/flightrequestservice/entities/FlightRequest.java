@@ -18,7 +18,7 @@ import java.time.LocalDate;
 @Builder
 @Data
 @Entity
-@Table(name = "FLIGHT_REQUESTS")
+@Table(schema = "FLIGHT_REQUEST_SERVICE", name = "FLIGHT_REQUESTS")
 public class FlightRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -47,20 +47,20 @@ public class FlightRequest {
     private LocalDate inboundDate;
 
     @Column(name = "ADULTS")
-    private int adults;
+    private Integer adults;
 
     @Column(name = "CHILDREN")
-    private int children;
+    private Integer children;
 
     @Column(name = "INFANTS")
-    private int infants;
+    private Integer infants;
 
     @Column(name = "GROUP_PRICING")
-    private boolean groupPricing;
+    private Boolean groupPricing;
 
     @Column(name = "SERIAL_POLL_PERIOD")
-    private int serialPollPeriod;
+    private Integer serialPollPeriod;
 
     @Column(name = "ENABLED_FLAG")
-    private boolean enabledFlag;
+    private Boolean enabledFlag;
 }

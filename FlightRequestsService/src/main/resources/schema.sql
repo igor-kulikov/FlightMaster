@@ -1,7 +1,8 @@
-drop table if exists FLIGHT_REQUESTS;
+drop schema if exists FLIGHT_REQUEST_SERVICE cascade;
+create schema FLIGHT_REQUEST_SERVICE;
 
-create table FLIGHT_REQUESTS (
-    REQUEST_ID serial primary key,
+create table FLIGHT_REQUEST_SERVICE.FLIGHT_REQUESTS (
+    REQUEST_ID bigserial primary key,
     COUNTRY text not null default 'UA',
     CURRENCY text not null default 'USD',
     LOCALE text not null default 'en-US',
@@ -9,7 +10,7 @@ create table FLIGHT_REQUESTS (
     DESTINATION_PLACE text not null,
     OUTBOUND_DATE text not null,
     INBOUND_DATE text,      -- Use empty string for oneway trip
---  CABIN_CLASS text,       -- Can be “Economy”, “PremiumEconomy”, “Business”, “First”
+--  CABIN_CLASS text,       -- Can be 'Economy', 'PremiumEconomy', 'Business', 'First'
     ADULTS int not null,
     CHILDREN int not null,
     INFANTS int not null default 0,
