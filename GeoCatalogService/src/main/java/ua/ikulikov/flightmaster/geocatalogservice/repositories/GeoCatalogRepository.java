@@ -30,7 +30,7 @@ public class GeoCatalogRepository {
 
     public void saveGeoCatalog(GeoCatalog geoCatalog) {
         String sqlQuery =
-                "insert into REF_GEOCATALOG as c" +
+                "insert into GEO_CATALOG.REF_GEOCATALOG as c" +
                         " (CONTINENT, COUNTRY_CODE, COUNTRY_NAME," +
                         "   CITY_CODE, CITY_NAME, CITY_POS," +
                         "   AIRPORT_CODE, AIRPORT_NAME, AIRPORT_POS," +
@@ -90,7 +90,7 @@ public class GeoCatalogRepository {
 
     public Set<String> getChildAirports(String place) {
         String sqlQuery =
-                "select AIRPORT_CODE from REF_GEOCATALOG " +
+                "select AIRPORT_CODE from GEO_CATALOG.REF_GEOCATALOG " +
                 "where CONTINENT = :PLACE "  +
                 "   or COUNTRY_CODE = :PLACE " +
                 "   or CITY_CODE = :PLACE " +

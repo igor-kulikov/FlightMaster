@@ -1,6 +1,7 @@
-drop table if exists REF_GEOCATALOG;
+drop schema if exists GEO_CATALOG cascade;
+create schema GEO_CATALOG;
 
-create table REF_GEOCATALOG (
+create table GEO_CATALOG.REF_GEOCATALOG (
     ID smallserial primary key,
     CONTINENT text not null,
     COUNTRY_CODE text not null,
