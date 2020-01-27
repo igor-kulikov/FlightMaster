@@ -1,18 +1,28 @@
+#cf create-service elephantsql turtle postgresdb
+#cf cups eureka-url -p '{"url": "http://eurekaservice.cfapps.io"}'
 ---
 applications:
+- name: EurekaService
+  path: EurekaService\target\EurekaService-0.0.1-SNAPSHOT.jar
+  memory: 1024Mb
+
 - name: FlightRequestsService
   path: FlightRequestsService\target\FlightRequestsService-0.0.1-SNAPSHOT.jar
   memory: 1024Mb
   services:
   - postgresdb
+  - eureka-url
 
 - name: GeoCatalogService
   path: GeoCatalogService\target\GeoCatalogService-0.0.1-SNAPSHOT.jar
   memory: 1024Mb
   services:
     - postgresdb
+    - eureka-url
 
-- name: EurekaService
-  host: eureka-test-service
-  path: EurekaService\target\EurekaService-0.0.1-SNAPSHOT.jar
-  memory: 512Mb
+- name: SkyScannerService
+  path: SkyScannerService\target\SkyScannerService-0.0.1-SNAPSHOT.jar
+  memory: 1024Mb
+  services:
+    - postgresdb
+    - eureka-url
