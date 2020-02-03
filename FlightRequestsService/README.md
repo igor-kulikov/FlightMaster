@@ -1,6 +1,13 @@
 # FlightRequestService
 
-Service managing user requests for flights
+Service managing user requests for flights.
+
+Flexible search configuration of flight locations is allowed:
+- airport - specified airport
+- country - any airport in specified country
+- continent - any airport in specified continent.
+
+Search configuration of serial poll with shifting period is allowed.
 
 End-points:
 - GET '/' - get all flight requests

@@ -55,8 +55,8 @@ public class FlightRequestServiceController {
     }
 
     @PostMapping("/poll/{flightRequestId}")
-    public void pollFlightRequest(@PathVariable Long flightRequestId) {
-	    flightRequestService.pollFlightRequest(flightRequestId);
+    public void processFlightRequest(@PathVariable Long flightRequestId) {
+	    flightRequestService.processFlightRequest(flightRequestId);
     }
 
     private ResponseEntity prepareResponse(Optional<FlightRequest> flightRequestOptional, Long flightRequestId) {

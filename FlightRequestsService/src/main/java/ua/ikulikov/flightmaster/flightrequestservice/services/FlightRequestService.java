@@ -1,11 +1,10 @@
 package ua.ikulikov.flightmaster.flightrequestservice.services;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequest;
@@ -25,6 +24,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class FlightRequestService implements IFlightRequestService {
+    @Value("${flightRequest.skyScannerService.url}")
+    private String url;
+
+    @Value("${flightRequest.skyScannerService.pollEndPoint}")
+    private String pollEndPoint;
+
+    private final GeoCatalogService geoCatalogService;
     private final FlightRequestRepository flightRequestRepository;
     private final FlightRequestPollRepository flightRequestPollRepository;
     private final RestTemplate restTemplate;
@@ -77,9 +83,16 @@ public class FlightRequestService implements IFlightRequestService {
         return Optional.empty();
     }
 
+    /**
+     * Processes flight request with flexible configuration of:
+     * <ul>
+     *     <li> location, e.g. KBP->GR: Kiev Borispol airport -> any airport in Greece</li>
+     *     <li> shifting window for flight dates, e.g. [2020-01-01; 2020-01-05], [2020-01-02; 2020-01-06], etc.</li>
+     * </ul>
+     */
     @Override
     @Transactional
-    public void pollFlightRequest(Long flightRequestId) {
+    public void processFlightRequest(Long flightRequestId) {
         //get flightRequest object by Id
         Optional<FlightRequest> flightRequestOptional = flightRequestRepository.findById(flightRequestId);
         if (!flightRequestOptional.isPresent()) {
@@ -88,8 +101,8 @@ public class FlightRequestService implements IFlightRequestService {
 
         //get airports located in origin-place and destination-place
         FlightRequest flightRequest = flightRequestOptional.get();
-        Set<String> originAirports = getChildAirportsInPlace(flightRequest.getOriginPlace());
-        Set<String> destinationAirports = getChildAirportsInPlace(flightRequest.getDestinationPlace());
+        Set<String> originAirports = geoCatalogService.getChildAirportsInPlace(flightRequest.getOriginPlace());
+        Set<String> destinationAirports = geoCatalogService.getChildAirportsInPlace(flightRequest.getDestinationPlace());
 
         for(String originAirport : originAirports)
             for (String destinationAirport : destinationAirports)
@@ -115,22 +128,13 @@ public class FlightRequestService implements IFlightRequestService {
                 }
     }
 
-    private Set<String> getChildAirportsInPlace(String place) {
-        //todo - extract geoCatalog end-point to property
-        ResponseEntity<Set<String>> placeAirportsResponse = restTemplate.exchange(
-                "http://geo-catalog-service/getChild/" + place, HttpMethod.GET, null,
-                new ParameterizedTypeReference<Set<String>>() {
-                });
-        return placeAirportsResponse.getBody();
-    }
-
     private LocalDateTime postPollRequestToSkyScanner(FlightRequestPoll flightRequestPoll) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("Content-Type", "application/json");
         HttpEntity<FlightRequestPoll> httpEntity = new HttpEntity<>(flightRequestPoll, httpHeaders);
 
         LocalDateTime sendPollRequestDateTime = LocalDateTime.now();
-        restTemplate.exchange("http://sky-scanner-service/poll", HttpMethod.POST, httpEntity, String.class).getBody();
+        restTemplate.exchange(url + pollEndPoint, HttpMethod.POST, httpEntity, String.class).getBody();
         return sendPollRequestDateTime;
     }
 
