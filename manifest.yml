@@ -2,6 +2,12 @@
 #cf cups eureka-url -p '{"url": "http://eurekaservice.cfapps.io"}'
 ---
 applications:
+- name: FlightMaster
+  path: ZuulService\target\ZuulService-0.0.1-SNAPSHOT.jar
+  memory: 1024Mb
+  services:
+    - eureka-url
+
 - name: EurekaService
   path: EurekaService\target\EurekaService-0.0.1-SNAPSHOT.jar
   memory: 1024Mb
@@ -10,8 +16,8 @@ applications:
   path: FlightRequestsService\target\FlightRequestsService-0.0.1-SNAPSHOT.jar
   memory: 1024Mb
   services:
-  - postgresdb
-  - eureka-url
+    - postgresdb
+    - eureka-url
 
 - name: GeoCatalogService
   path: GeoCatalogService\target\GeoCatalogService-0.0.1-SNAPSHOT.jar
