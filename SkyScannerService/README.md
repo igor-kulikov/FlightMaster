@@ -1,6 +1,8 @@
 # SkyScannerService
 
-Service interracts with SkyScanner public API
+Service interacts with SkyScanner public API
 
 End-points:
-- POST '/poll' - add new flight request
+- POST '/poll' - poll SkyScanner API as per given flight request
+- GET '/show/{flightRequestId}' - displays results of polling flight request
+  (only direct and cheapest offers)

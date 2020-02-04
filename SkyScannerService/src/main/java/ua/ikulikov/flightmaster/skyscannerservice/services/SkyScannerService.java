@@ -9,12 +9,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import ua.ikulikov.flightmaster.skyscannerservice.SkyScannerServiceException;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollStatus;
@@ -23,6 +25,7 @@ import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPoll;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.IAgentRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.ICarrierRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.IFlightRequestPollRepository;
+import ua.ikulikov.flightmaster.skyscannerservice.repositories.IItineraryRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.ILegRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.IPlaceRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.utils.Utils;
@@ -32,13 +35,13 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-@PropertySource("classpath:/application.properties")
 public class SkyScannerService implements ISkyScannerService {
     private final IFlightRequestPollRepository flightRequestPollRepository;
     private final IAgentRepository agentRepository;
     private final ICarrierRepository carrierRepository;
     private final IPlaceRepository placeRepository;
     private final ILegRepository legRepository;
+    private final IItineraryRepository itineraryRepository;
     private final RestTemplate rest;
 
     private Logger logger = Logger.getLogger(SkyScannerService.class);
@@ -110,16 +113,21 @@ public class SkyScannerService implements ISkyScannerService {
         Pair<FlightData, LocalDateTime> flightDataPair = pollSession(sessionKey);
 
         FlightData flightData = flightDataPair.getLeft();
-        agentRepository.saveAll(flightData.getAgents());
-        carrierRepository.saveAll(flightData.getCarriers());
-        placeRepository.saveAll(flightData.getPlaces());
-        legRepository.saveAll(flightData.getLegs());
+        try {
+            agentRepository.saveAll(flightData.getAgents());
+            carrierRepository.saveAll(flightData.getCarriers());
+            placeRepository.saveAll(flightData.getPlaces());
+            legRepository.saveAll(flightData.getLegs());
+            itineraryRepository.saveAll((flightData.getItineraries()));
 
-        flightRequestPoll.setFlightRequestPollStatus(FlightRequestPollStatus.SUCCESS);
-        flightRequestPoll.setPollStatusDateTime(flightDataPair.getRight());
-        flightRequestPoll.setItineraries(flightData.getItineraries());
-        flightRequestPollRepository.save(flightRequestPoll);
-
+            flightRequestPoll.setFlightRequestPollStatus(FlightRequestPollStatus.SUCCESS);
+            flightRequestPoll.setPollStatusDateTime(flightDataPair.getRight());
+            flightRequestPoll.setItineraries(flightData.getItineraries());
+            flightRequestPollRepository.save(flightRequestPoll);
+        }
+        catch (DataIntegrityViolationException e) {
+            logger.error("DataIntegrityViolationException = ", e);
+        }
         currentThread.setName(origThreadName);
     }
 
@@ -149,7 +157,7 @@ public class SkyScannerService implements ISkyScannerService {
                         .field("originPlace", pollRequest.getOutboundAirport() + "-sky")
                         .field("destinationPlace", pollRequest.getInboundAirport() + "-sky")
                         .field("outboundDate", pollRequest.getOutboundDate().toString())
-                        .field("inboundDate", pollRequest.getInboundDate().toString())
+                        .field("inboundDate", pollRequest.getInboundDate().toString())  // todo - fix "inboundDate is optional
 //                    .field("cabinClass", "business")
                         .field("adults", String.valueOf(pollRequest.getAdults()))
                         .field("children", String.valueOf(pollRequest.getChildren()))
@@ -192,7 +200,13 @@ public class SkyScannerService implements ISkyScannerService {
         do {
             attemptCounter++;
             logger.info(String.format("starting to poll session: attempt %d of %d", attemptCounter, pollSessionMaxAttemptsCount));
-            flightData = rest.exchange(url, HttpMethod.GET, getHttpRequest(), FlightData.class).getBody();
+            try {
+                flightData = rest.exchange(url, HttpMethod.GET, getHttpRequest(), FlightData.class).getBody();
+            }
+            catch (RestClientException e) {
+                logger.error("RestClientException = " + e);
+                throw new RuntimeException(e);
+            }
             if (attemptCounter < pollSessionMaxAttemptsCount && !isUpdatesComplete(flightData))
                 Utils.sleep(attemptsTimeout, "sleeping between attempts");
         }
