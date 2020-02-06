@@ -15,10 +15,10 @@ import ua.ikulikov.flightmaster.flightrequestservice.repositories.FlightRequestR
 import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Service
@@ -96,7 +96,7 @@ public class FlightRequestService implements IFlightRequestService {
         //get flightRequest object by Id
         Optional<FlightRequest> flightRequestOptional = flightRequestRepository.findById(flightRequestId);
         if (!flightRequestOptional.isPresent()) {
-            return;     // todo - handle response properly
+            return;
         }
 
         //get airports located in origin-place and destination-place
@@ -104,26 +104,18 @@ public class FlightRequestService implements IFlightRequestService {
         Set<String> originAirports = geoCatalogService.getChildAirportsInPlace(flightRequest.getOriginPlace());
         Set<String> destinationAirports = geoCatalogService.getChildAirportsInPlace(flightRequest.getDestinationPlace());
 
+        BiFunction<LocalDate, Integer, LocalDate> shiftLocalDateFunc =  (date, days) -> (date == null) ? null : date.plusDays(days);
         for(String originAirport : originAirports)
             for (String destinationAirport : destinationAirports)
                 for (int shiftDays = 0; shiftDays <= flightRequest.getSerialPollPeriod(); shiftDays++) {
-                    LocalDate shiftedOutboundDate = flightRequest.getOutboundDate().plusDays(shiftDays);
-                    LocalDate shiftedInboundDate = flightRequest.getInboundDate().plusDays(shiftDays);
-
-                    // todo - add logger
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd LLLL yyyy");
-                    System.out.println(String.format("Polling SkyScannerService with following parameters:\n" +
-                            "  - airportOrigin = %s, airportDestination = %s\n" +
-                            "  - shiftedOutboundDate = %s, shiftedInboundDate = %s",
-                            originAirport, destinationAirport,
-                            shiftedOutboundDate.format(formatter), shiftedInboundDate.format(formatter)));
+                    LocalDate shiftedOutboundDate = shiftLocalDateFunc.apply(flightRequest.getOutboundDate(), shiftDays);
+                    LocalDate shiftedInboundDate = shiftLocalDateFunc.apply(flightRequest.getInboundDate(), shiftDays);
 
                     FlightRequestPoll flightRequestPoll = new FlightRequestPoll(flightRequest,
                             originAirport, destinationAirport, shiftedOutboundDate, shiftedInboundDate);
 
                     // poll SkyScanner service for flights between airports
                     LocalDateTime sendPollRequestDateTime = postPollRequestToSkyScanner(flightRequestPoll);
-
                     flightRequestPoll.setPollDateTime(sendPollRequestDateTime);
                 }
     }
@@ -137,5 +129,4 @@ public class FlightRequestService implements IFlightRequestService {
         restTemplate.exchange(url + pollEndPoint, HttpMethod.POST, httpEntity, String.class).getBody();
         return sendPollRequestDateTime;
     }
-
 }
