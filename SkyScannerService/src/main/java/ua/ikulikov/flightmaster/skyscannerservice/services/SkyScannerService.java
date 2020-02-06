@@ -30,8 +30,10 @@ import ua.ikulikov.flightmaster.skyscannerservice.repositories.ILegRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.IPlaceRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.utils.Utils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -147,6 +149,7 @@ public class SkyScannerService implements ISkyScannerService {
 
                 logger.info(String.format("starting to create session: attempt %d of %d", attemptCounter, createSessionMaxAttemptsCount));
 
+                Function<LocalDate, String> dateToStrFunc = date -> (date == null) ? "" : date.toString();
                 response = Unirest.post(createSessionUrl)
                         .header("X-RapidAPI-Host", httpRequestHeaders.get("X-RapidAPI-Host"))
                         .header("X-RapidAPI-Key", httpRequestHeaders.get("X-RapidAPI-Key"))
@@ -156,8 +159,8 @@ public class SkyScannerService implements ISkyScannerService {
                         .field("locale", pollRequest.getLocale())
                         .field("originPlace", pollRequest.getOutboundAirport() + "-sky")
                         .field("destinationPlace", pollRequest.getInboundAirport() + "-sky")
-                        .field("outboundDate", pollRequest.getOutboundDate().toString())
-                        .field("inboundDate", pollRequest.getInboundDate().toString())  // todo - fix "inboundDate is optional
+                        .field("outboundDate", dateToStrFunc.apply(pollRequest.getOutboundDate()))
+                        .field("inboundDate", dateToStrFunc.apply(pollRequest.getInboundDate()))
 //                    .field("cabinClass", "business")
                         .field("adults", String.valueOf(pollRequest.getAdults()))
                         .field("children", String.valueOf(pollRequest.getChildren()))
