@@ -28,7 +28,8 @@ create table FLIGHT_REQUEST_SERVICE.FLIGHT_REQUEST_POLLS (
     INBOUND_AIRPORT text,
     OUTBOUND_DATE date not null,
     INBOUND_DATE date,
-    POLL_SEND_DT timestamp not null,
+    POLL_STATUS text,
+    POLL_STATUS_DT timestamp,
 --    RAW_RESPONSE json not null
     foreign key (REQUEST_ID) references FLIGHT_REQUEST_SERVICE.FLIGHT_REQUESTS
 );

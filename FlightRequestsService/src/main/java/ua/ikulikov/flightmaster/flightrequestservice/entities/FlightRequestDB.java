@@ -19,7 +19,7 @@ import java.time.LocalDate;
 @Data
 @Entity
 @Table(schema = "FLIGHT_REQUEST_SERVICE", name = "FLIGHT_REQUESTS")
-public class FlightRequest {
+public class FlightRequestDB {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "REQUEST_ID")

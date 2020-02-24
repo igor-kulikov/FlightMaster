@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -20,15 +22,15 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @Entity
-@Table(name = "FLIGHT_REQUEST_POLLS")
-public class FlightRequestPoll {
+@Table(schema = "FLIGHT_REQUEST_SERVICE", name = "FLIGHT_REQUEST_POLLS")
+public class FlightRequestPollDB {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "POLL_ID", unique = true, nullable = false)
     private Long id;
 
     @Transient
-    private FlightRequest request;
+    private FlightRequestDB request;
 
     @Transient
     private String country;
@@ -66,11 +68,15 @@ public class FlightRequestPoll {
     @Transient
     private Boolean groupPricing;
 
-    @Column(name = "POLL_SEND_DT")
-    private LocalDateTime pollDateTime;
+    @Column(name = "POLL_STATUS")
+    @Enumerated(EnumType.STRING)
+    private PollStatus status;
 
-    public FlightRequestPoll(FlightRequest request, String outboundAirport, String inboundAirport, LocalDate outboundDate,
-                             LocalDate inboundDate) {
+    @Column(name = "POLL_STATUS_DT")
+    private LocalDateTime statusDT;
+
+    public FlightRequestPollDB(FlightRequestDB request, String outboundAirport, String inboundAirport, LocalDate outboundDate,
+                               LocalDate inboundDate, PollStatus status, LocalDateTime statusDT) {
         this.request = request;
         this.requestId = request.getId();
         this.country = request.getCountry();
@@ -84,5 +90,7 @@ public class FlightRequestPoll {
         this.children = request.getChildren();
         this.infants = request.getInfants();
         this.groupPricing = request.getGroupPricing();
+        this.status = status;
+        this.statusDT = statusDT;
     }
 }

@@ -1,14 +1,14 @@
 package ua.ikulikov.flightmaster.flightrequestservice.services;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequest;
-import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequestPoll;
+import ua.ikulikov.flightmaster.flightrequestservice.config.AmqpProperty;
+import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequestDB;
+import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequestPollDB;
+import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequestPollMQ;
+import ua.ikulikov.flightmaster.flightrequestservice.entities.PollStatus;
 import ua.ikulikov.flightmaster.flightrequestservice.repositories.FlightRequestPollRepository;
 import ua.ikulikov.flightmaster.flightrequestservice.repositories.FlightRequestRepository;
 
@@ -31,54 +31,55 @@ public class FlightRequestService implements IFlightRequestService {
     private String pollEndPoint;
 
     private final GeoCatalogService geoCatalogService;
-    private final FlightRequestRepository flightRequestRepository;
-    private final FlightRequestPollRepository flightRequestPollRepository;
-    private final RestTemplate restTemplate;
+    private final FlightRequestRepository requestRepository;
+    private final FlightRequestPollRepository pollRepository;
+    private final AmqpTemplate amqpRequestsPublisher;
+    private final AmqpProperty amqpProps;
 
     @Override
-    public void processFlightRequest(FlightRequest request) {
+    public void processFlightRequest(FlightRequestDB request) {
     }
 
     @Override
-    public List<FlightRequest> getFlightRequests() {
-        return flightRequestRepository.findAll();
+    public List<FlightRequestDB> getFlightRequests() {
+        return requestRepository.findAll();
     }
 
     @Override
-    public List<FlightRequest> getEnabledFlightRequests() {
+    public List<FlightRequestDB> getEnabledFlightRequests() {
         return getFlightRequests()
                 .stream()
-                .filter(FlightRequest::getEnabledFlag)
+                .filter(FlightRequestDB::getEnabledFlag)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public FlightRequest addFlightRequest(FlightRequest flightRequest) {
-        return flightRequestRepository.saveAndFlush(flightRequest);
+    public FlightRequestDB addFlightRequest(FlightRequestDB flightRequestDB) {
+        return requestRepository.saveAndFlush(flightRequestDB);
     }
 
     @Override
     public void deleteFlightRequest(long id) {
-        flightRequestRepository.deleteById(id);
+        requestRepository.deleteById(id);
     }
 
     @Override
-    public Optional<FlightRequest> disableFlightRequest(long id) {
+    public Optional<FlightRequestDB> disableFlightRequest(long id) {
         return setEnabledFlag(id, false);
     }
 
     @Override
-    public Optional<FlightRequest> enableFlightRequest(long id) {
+    public Optional<FlightRequestDB> enableFlightRequest(long id) {
         return setEnabledFlag(id, true);
     }
 
     @Override
-    public Optional<FlightRequest> setEnabledFlag(long id, boolean enabled) {
-        Optional<FlightRequest> flightRequestOptional = flightRequestRepository.findById(id);
+    public Optional<FlightRequestDB> setEnabledFlag(long id, boolean enabled) {
+        Optional<FlightRequestDB> flightRequestOptional = requestRepository.findById(id);
         if (flightRequestOptional.isPresent()) {
-            FlightRequest flightRequest = flightRequestOptional.get();
-            flightRequest.setEnabledFlag(enabled);
-            return Optional.of(flightRequestRepository.save(flightRequest));
+            FlightRequestDB flightRequestDB = flightRequestOptional.get();
+            flightRequestDB.setEnabledFlag(enabled);
+            return Optional.of(requestRepository.save(flightRequestDB));
         }
         return Optional.empty();
     }
@@ -94,39 +95,31 @@ public class FlightRequestService implements IFlightRequestService {
     @Transactional
     public void processFlightRequest(Long flightRequestId) {
         //get flightRequest object by Id
-        Optional<FlightRequest> flightRequestOptional = flightRequestRepository.findById(flightRequestId);
+        Optional<FlightRequestDB> flightRequestOptional = requestRepository.findById(flightRequestId);
         if (!flightRequestOptional.isPresent()) {
             return;
         }
 
         //get airports located in origin-place and destination-place
-        FlightRequest flightRequest = flightRequestOptional.get();
-        Set<String> originAirports = geoCatalogService.getChildAirportsInPlace(flightRequest.getOriginPlace());
-        Set<String> destinationAirports = geoCatalogService.getChildAirportsInPlace(flightRequest.getDestinationPlace());
+        FlightRequestDB flightRequestDB = flightRequestOptional.get();
+        Set<String> originAirports = geoCatalogService.getChildAirportsInPlace(flightRequestDB.getOriginPlace());
+        Set<String> destinationAirports = geoCatalogService.getChildAirportsInPlace(flightRequestDB.getDestinationPlace());
 
         BiFunction<LocalDate, Integer, LocalDate> shiftLocalDateFunc =  (date, days) -> (date == null) ? null : date.plusDays(days);
         for(String originAirport : originAirports)
             for (String destinationAirport : destinationAirports)
-                for (int shiftDays = 0; shiftDays <= flightRequest.getSerialPollPeriod(); shiftDays++) {
-                    LocalDate shiftedOutboundDate = shiftLocalDateFunc.apply(flightRequest.getOutboundDate(), shiftDays);
-                    LocalDate shiftedInboundDate = shiftLocalDateFunc.apply(flightRequest.getInboundDate(), shiftDays);
+                for (int shiftDays = 0; shiftDays <= flightRequestDB.getSerialPollPeriod(); shiftDays++) {
+                    LocalDate shiftedOutboundDate = shiftLocalDateFunc.apply(flightRequestDB.getOutboundDate(), shiftDays);
+                    LocalDate shiftedInboundDate = shiftLocalDateFunc.apply(flightRequestDB.getInboundDate(), shiftDays);
 
-                    FlightRequestPoll flightRequestPoll = new FlightRequestPoll(flightRequest,
-                            originAirport, destinationAirport, shiftedOutboundDate, shiftedInboundDate);
+                    FlightRequestPollDB pollDB = new FlightRequestPollDB(flightRequestDB,
+                            originAirport, destinationAirport, shiftedOutboundDate, shiftedInboundDate,
+                            PollStatus.NEW, LocalDateTime.now());
+                    pollRepository.save(pollDB);
 
-                    // poll SkyScanner service for flights between airports
-                    LocalDateTime sendPollRequestDateTime = postPollRequestToSkyScanner(flightRequestPoll);
-                    flightRequestPoll.setPollDateTime(sendPollRequestDateTime);
+                    // send message to request queue of SkyScanner RabbitMQ exchange
+                    FlightRequestPollMQ pollMQ = new FlightRequestPollMQ(pollDB);
+                    amqpRequestsPublisher.convertAndSend(amqpProps.getExchange(), amqpProps.getRequestRoutingKey(), pollMQ);
                 }
-    }
-
-    private LocalDateTime postPollRequestToSkyScanner(FlightRequestPoll flightRequestPoll) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("Content-Type", "application/json");
-        HttpEntity<FlightRequestPoll> httpEntity = new HttpEntity<>(flightRequestPoll, httpHeaders);
-
-        LocalDateTime sendPollRequestDateTime = LocalDateTime.now();
-        restTemplate.exchange(url + pollEndPoint, HttpMethod.POST, httpEntity, String.class).getBody();
-        return sendPollRequestDateTime;
     }
 }
