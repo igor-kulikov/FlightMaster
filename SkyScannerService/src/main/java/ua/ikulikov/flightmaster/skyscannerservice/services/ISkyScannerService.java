@@ -1,9 +1,7 @@
 package ua.ikulikov.flightmaster.skyscannerservice.services;
 
-import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPoll;
-
-import java.time.LocalDateTime;
+import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDB;
 
 public interface ISkyScannerService {
-    void proceedFlightPollRequest(FlightRequestPoll flightRequestPoll, LocalDateTime requestReceivedDateTime);
+    void proceedFlightPollRequest(FlightRequestPollDB poll);
 }

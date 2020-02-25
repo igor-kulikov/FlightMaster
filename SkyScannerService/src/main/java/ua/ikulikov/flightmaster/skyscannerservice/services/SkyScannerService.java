@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -19,9 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import ua.ikulikov.flightmaster.skyscannerservice.SkyScannerServiceException;
+import ua.ikulikov.flightmaster.skyscannerservice.config.AmqpProperty;
+import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightPollStatusMQ;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollStatus;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.flightdata.FlightData;
-import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPoll;
+import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDB;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.IAgentRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.ICarrierRepository;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.IFlightRequestPollRepository;
@@ -45,6 +47,8 @@ public class SkyScannerService implements ISkyScannerService {
     private final ILegRepository legRepository;
     private final IItineraryRepository itineraryRepository;
     private final RestTemplate rest;
+    private final AmqpTemplate amqpEventsPublisher;
+    private final AmqpProperty amqpProps;
 
     private Logger logger = Logger.getLogger(SkyScannerService.class);
 
@@ -79,38 +83,42 @@ public class SkyScannerService implements ISkyScannerService {
      * <p>
      * Persist pricing data to database.
      *
-     * @param flightRequestPoll       flight request's details
-     * @param requestReceivedDateTime date time of receiving request
+     * @param poll       flight request's details
      */
     @Override
     @Async("taskExecutor")
-    public void proceedFlightPollRequest(FlightRequestPoll flightRequestPoll, LocalDateTime requestReceivedDateTime) {
-        flightRequestPoll.setRequestReceivedDateTime(requestReceivedDateTime);
-        flightRequestPoll.setFlightRequestPollStatus(FlightRequestPollStatus.IN_PROGRESS);
-        flightRequestPoll.setPollStatusDateTime(LocalDateTime.now());
-        flightRequestPoll = flightRequestPollRepository.saveAndFlush(flightRequestPoll);
+    public void proceedFlightPollRequest(FlightRequestPollDB poll) {
+        poll.setFlightRequestPollStatus(FlightRequestPollStatus.IN_PROGRESS);
+        poll.setPollStatusDateTime(LocalDateTime.now());
+        poll = flightRequestPollRepository.saveAndFlush(poll);
 
         try {
-            proceedSkyScannerPolling(flightRequestPoll);
+            proceedSkyScannerPolling(poll);
         }
         catch (SkyScannerServiceException e) {
-            flightRequestPoll.setFlightRequestPollStatus(e.getFlightRequestPollStatus());
-            flightRequestPoll.setPollStatusDateTime(LocalDateTime.now());
-            flightRequestPoll = flightRequestPollRepository.saveAndFlush(flightRequestPoll);
+            poll.setFlightRequestPollStatus(e.getFlightRequestPollStatus());
+            poll.setPollStatusDateTime(LocalDateTime.now());
+            poll = flightRequestPollRepository.saveAndFlush(poll);
+            FlightPollStatusMQ pollStatusMQ = new FlightPollStatusMQ(poll.getId(), poll.getFlightRequestPollStatus(), poll.getPollStatusDateTime());
+            amqpEventsPublisher.convertAndSend(amqpProps.getExchange(), amqpProps.getEventRoutingKey(), pollStatusMQ);
             logger.error(e.getMessage());
         }
+
+        //todo - take status time from SkyScanner response
+        FlightPollStatusMQ pollStatusMQ = new FlightPollStatusMQ(poll.getId(), FlightRequestPollStatus.SUCCESS, LocalDateTime.now());
+        amqpEventsPublisher.convertAndSend(amqpProps.getExchange(), amqpProps.getEventRoutingKey(), pollStatusMQ);
     }
 
     @Transactional
-    public void proceedSkyScannerPolling(FlightRequestPoll flightRequestPoll) throws SkyScannerServiceException {
+    public void proceedSkyScannerPolling(FlightRequestPollDB poll) throws SkyScannerServiceException {
         final Thread currentThread = Thread.currentThread();
         final String origThreadName = currentThread.getName();
 
         currentThread.setName(String.format("LP_(%s_%s)->(%s_%s)",
-                flightRequestPoll.getOutboundAirport(), flightRequestPoll.getOutboundDate(),
-                flightRequestPoll.getInboundAirport(), flightRequestPoll.getInboundDate()));
+                poll.getOutboundAirport(), poll.getOutboundDate(),
+                poll.getInboundAirport(), poll.getInboundDate()));
 
-        String sessionKey = createSession(flightRequestPoll);
+        String sessionKey = createSession(poll);
         Utils.sleep(firstPollDelayMs, "sleeping before first poll");
         Pair<FlightData, LocalDateTime> flightDataPair = pollSession(sessionKey);
 
@@ -122,10 +130,10 @@ public class SkyScannerService implements ISkyScannerService {
             legRepository.saveAll(flightData.getLegs());
             itineraryRepository.saveAll((flightData.getItineraries()));
 
-            flightRequestPoll.setFlightRequestPollStatus(FlightRequestPollStatus.SUCCESS);
-            flightRequestPoll.setPollStatusDateTime(flightDataPair.getRight());
-            flightRequestPoll.setItineraries(flightData.getItineraries());
-            flightRequestPollRepository.save(flightRequestPoll);
+            poll.setFlightRequestPollStatus(FlightRequestPollStatus.SUCCESS);
+            poll.setPollStatusDateTime(flightDataPair.getRight());
+            poll.setItineraries(flightData.getItineraries());
+            flightRequestPollRepository.save(poll);
         }
         catch (DataIntegrityViolationException e) {
             logger.error("DataIntegrityViolationException = ", e);
@@ -140,7 +148,7 @@ public class SkyScannerService implements ISkyScannerService {
      * @param pollRequest flight request's details
      * @return sessionKey identifier of created session in SkyScanner service
      */
-    private String createSession(FlightRequestPoll pollRequest) throws SkyScannerServiceException {
+    private String createSession(FlightRequestPollDB pollRequest) throws SkyScannerServiceException {
         HttpResponse<JsonNode> response;
 
         int attemptCounter = 0;

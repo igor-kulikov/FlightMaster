@@ -1,9 +1,9 @@
 package ua.ikulikov.flightmaster.skyscannerservice;
 
-import lombok.Data;
+import lombok.Getter;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollStatus;
 
-@Data
+@Getter
 public class SkyScannerServiceException extends Exception {
     private FlightRequestPollStatus flightRequestPollStatus;
 

@@ -24,7 +24,7 @@ import java.util.Set;
 @Data
 @Entity
 @Table(schema = "SKY_SCANNER", name = "FLIGHT_REQUEST_POLLS")
-public class FlightRequestPoll {
+public class FlightRequestPollDB {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "POLL_ID")
@@ -66,9 +66,6 @@ public class FlightRequestPoll {
     @Column(name = "GROUP_PRICING")
     private Boolean groupPricing;
 
-    @Column(name = "REQUEST_RECEIVED_DT")
-    private LocalDateTime requestReceivedDateTime;
-
     @Column(name = "POLL_STATUS")
     @Enumerated(EnumType.STRING)
     private FlightRequestPollStatus flightRequestPollStatus;
@@ -81,4 +78,20 @@ public class FlightRequestPoll {
             joinColumns = {@JoinColumn(name = "POLL_ID")},
             inverseJoinColumns = {@JoinColumn(name = "ITINERARY_ID")})
     private Set<Itinerary> itineraries;
+
+    public FlightRequestPollDB(FlightRequestPollMQ pollMQ) {
+        this.id = pollMQ.getPollId();
+        this.requestId = pollMQ.getRequestId();
+        this.country = pollMQ.getCountry();
+        this.currency = pollMQ.getCurrency();
+        this.locale = pollMQ.getLocale();
+        this.outboundAirport = pollMQ.getOutboundAirport();
+        this.inboundAirport = pollMQ.getInboundAirport();
+        this.outboundDate = pollMQ.getOutboundDate();
+        this.inboundDate = pollMQ.getInboundDate();
+        this.adults = pollMQ.getAdults();
+        this.children = pollMQ.getChildren();
+        this.infants = pollMQ.getInfants();
+        this.groupPricing = pollMQ.getGroupPricing();
+    }
 }

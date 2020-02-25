@@ -20,7 +20,6 @@ create table SKY_SCANNER.FLIGHT_REQUEST_POLLS (
 --  EXCLUDE_CARRIERS,       -- Filter out results from those carriers. Comma-separated list of carrier ids
     GROUP_PRICING boolean,       -- If set to true, prices will be obtained for the whole passenger group
                                                 -- and if set to false it will be obtained for one adult.
-    REQUEST_RECEIVED_DT timestamp not null,
     POLL_STATUS text,
     POLL_STATUS_DT timestamp
 --  RAW_RESPONSE json not null
