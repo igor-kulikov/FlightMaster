@@ -142,18 +142,16 @@ left outer join (
 	group by pa.PRICE_OPTION_ID) agents on agents.PRICE_OPTION_ID = po.PRICE_OPTION_ID
 ;
 
---------------- create views
 create or replace view SKY_SCANNER.V_DIRECT_LEGS as
 select l.LEG_ID from SKY_SCANNER.LEGS l
 left outer join SKY_SCANNER.LEG_STOPS ls
   on ls.LEG_ID = l.LEG_ID
 where ls.LEG_ID is null;
 
---todo - check one-way trips
 create or replace view SKY_SCANNER.V_DIRECT_ITINERARIES as
 select it.ITINERARY_ID from SKY_SCANNER.ITINERARIES it
 join SKY_SCANNER.V_DIRECT_LEGS ol on ol.LEG_ID = it.OUTBOUND_LEG_ID
-join SKY_SCANNER.V_DIRECT_LEGS il on il.LEG_ID = it.INBOUND_LEG_ID;
+left outer join SKY_SCANNER.V_DIRECT_LEGS il on il.LEG_ID = it.INBOUND_LEG_ID;
 
 
 create or replace view SKY_SCANNER.V_BEST_PRICE_OPTIONS as
