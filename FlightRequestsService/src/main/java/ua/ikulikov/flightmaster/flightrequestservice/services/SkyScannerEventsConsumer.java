@@ -1,6 +1,7 @@
 package ua.ikulikov.flightmaster.flightrequestservice.rabbitmq;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.log4j.Logger;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightPollStatusMQ;
@@ -14,6 +15,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class EventsListener {
     private final FlightRequestPollRepository pollRepository;
+    private final Logger logger = Logger.getLogger(SkyScannerEventsConsumer.class);
 
     @RabbitListener(queues = "${skyScannerServiceAmqp.eventsQueue}")
     @Transactional
@@ -22,6 +24,7 @@ public class EventsListener {
         Optional<FlightRequestPollDB> flightPollOptional = pollRepository.findById(statusMQ.getPollId());
         if (!flightPollOptional.isPresent())
             return;
+        }
 
         FlightRequestPollDB flightPoll = flightPollOptional.get();
         flightPoll.setStatus(statusMQ.getPollStatus());
