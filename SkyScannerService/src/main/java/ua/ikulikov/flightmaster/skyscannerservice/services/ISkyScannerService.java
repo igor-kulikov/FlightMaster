@@ -1,7 +1,7 @@
 package ua.ikulikov.flightmaster.skyscannerservice.services;
 
-import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDB;
+import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDto;
 
 public interface ISkyScannerService {
-    void proceedFlightPollRequest(FlightRequestPollDB poll);
+    void proceedFlightPollRequest(FlightRequestPollDto poll);
 }

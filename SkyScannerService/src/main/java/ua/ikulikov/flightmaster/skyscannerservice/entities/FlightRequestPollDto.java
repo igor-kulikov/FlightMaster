@@ -24,7 +24,7 @@ import java.util.Set;
 @Data
 @Entity
 @Table(schema = "SKY_SCANNER", name = "FLIGHT_REQUEST_POLLS")
-public class FlightRequestPollDB {
+public class FlightRequestPollDto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "POLL_ID")
@@ -79,7 +79,7 @@ public class FlightRequestPollDB {
             inverseJoinColumns = {@JoinColumn(name = "ITINERARY_ID")})
     private Set<Itinerary> itineraries;
 
-    public FlightRequestPollDB(FlightRequestPollMQ pollMQ) {
+    public FlightRequestPollDto(FlightRequestPollMQ pollMQ) {
         this.id = pollMQ.getPollId();
         this.requestId = pollMQ.getRequestId();
         this.country = pollMQ.getCountry();

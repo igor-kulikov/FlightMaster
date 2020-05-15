@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequestDB;
+import ua.ikulikov.flightmaster.flightrequestservice.entities.FlightRequestDto;
 import ua.ikulikov.flightmaster.flightrequestservice.services.IFlightRequestService;
 
 import java.util.List;
@@ -22,35 +22,34 @@ public class FlightRequestServiceController {
     private IFlightRequestService flightRequestService;
 
 	@GetMapping(value="/")
-    public List<FlightRequestDB> getFlightRequests() {
+    public List<FlightRequestDto> getFlightRequests() {
         return flightRequestService.getFlightRequests();
     }
 
     @GetMapping(value="/enabled")
-    public List<FlightRequestDB> getEnabledFlightRequests() {
+    public List<FlightRequestDto> getEnabledFlightRequests() {
         return flightRequestService.getEnabledFlightRequests();
     }
 
     @PostMapping("/add")
-    public FlightRequestDB addRequest(@RequestBody FlightRequestDB flightRequestDB) {
-        return flightRequestService.addFlightRequest(flightRequestDB);
+    public FlightRequestDto addRequest(@RequestBody FlightRequestDto flightRequestDto) {
+        return flightRequestService.addFlightRequest(flightRequestDto);
     }
 
     @DeleteMapping("/delete/{flightRequestId}")
     public void deleteFlightRequest(@PathVariable Long flightRequestId) {
-        System.out.println("from deleteFlightRequest");
-	    flightRequestService.deleteFlightRequest(flightRequestId);
+        flightRequestService.deleteFlightRequest(flightRequestId);
     }
 
     @PutMapping("/enable/{flightRequestId}")
     public ResponseEntity enableFlightRequest(@PathVariable Long flightRequestId) {
-        Optional<FlightRequestDB> flightRequestOptional = flightRequestService.setEnabledFlag(flightRequestId, true);
+        Optional<FlightRequestDto> flightRequestOptional = flightRequestService.setEnabledFlag(flightRequestId, true);
         return prepareResponse(flightRequestOptional, flightRequestId);
     }
 
     @PutMapping("/disable/{flightRequestId}")
     public ResponseEntity disableFlightRequest(@PathVariable Long flightRequestId) {
-        Optional<FlightRequestDB> flightRequestOptional = flightRequestService.setEnabledFlag(flightRequestId, false);
+        Optional<FlightRequestDto> flightRequestOptional = flightRequestService.setEnabledFlag(flightRequestId, false);
         return prepareResponse(flightRequestOptional, flightRequestId);
     }
 
@@ -59,7 +58,7 @@ public class FlightRequestServiceController {
 	    flightRequestService.processFlightRequest(flightRequestId);
     }
 
-    private ResponseEntity prepareResponse(Optional<FlightRequestDB> flightRequestOptional, Long flightRequestId) {
+    private ResponseEntity prepareResponse(Optional<FlightRequestDto> flightRequestOptional, Long flightRequestId) {
         if (!flightRequestOptional.isPresent())
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)

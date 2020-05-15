@@ -11,7 +11,7 @@
 	</parent>
 
 	<groupId>ua.ikulikov.flightmaster</groupId>
-	<artifactId>FlightRequestsService</artifactId>
+	<artifactId>FlightRequestsMicroservice</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>FlightRequestsService</name>
 

@@ -21,7 +21,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Data
 public class RabbitMQConfig {
-    private final AmqpProperty amqpProps;
+    private final AmqpPropertyConfig amqpProps;
 
     @Bean
     public DirectExchange skyScannerAmqpExchange() {

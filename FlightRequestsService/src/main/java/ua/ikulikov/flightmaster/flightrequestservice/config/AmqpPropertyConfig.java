@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "skyscannerserviceamqp")
 @Data
-public class AmqpProperty {
+public class AmqpPropertyConfig {
     private String exchange;
     private String requestsQueue;
     private String requestRoutingKey;

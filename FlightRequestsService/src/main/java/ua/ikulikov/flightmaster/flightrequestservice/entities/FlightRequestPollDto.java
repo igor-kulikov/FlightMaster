@@ -23,14 +23,14 @@ import java.time.LocalDateTime;
 @Builder
 @Entity
 @Table(schema = "FLIGHT_REQUEST_SERVICE", name = "FLIGHT_REQUEST_POLLS")
-public class FlightRequestPollDB {
+public class FlightRequestPollDto {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "POLL_ID", unique = true, nullable = false)
     private Long id;
 
     @Transient
-    private FlightRequestDB request;
+    private FlightRequestDto request;
 
     @Transient
     private String country;
@@ -75,8 +75,8 @@ public class FlightRequestPollDB {
     @Column(name = "POLL_STATUS_DT")
     private LocalDateTime statusDT;
 
-    public FlightRequestPollDB(FlightRequestDB request, String outboundAirport, String inboundAirport, LocalDate outboundDate,
-                               LocalDate inboundDate, PollStatus status, LocalDateTime statusDT) {
+    public FlightRequestPollDto(FlightRequestDto request, String outboundAirport, String inboundAirport, LocalDate outboundDate,
+                                LocalDate inboundDate, PollStatus status, LocalDateTime statusDT) {
         this.request = request;
         this.requestId = request.getId();
         this.country = request.getCountry();

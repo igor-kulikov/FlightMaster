@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightDataAggregated;
-import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDB;
+import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDto;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollStatus;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.flightdata.FlightData;
 import ua.ikulikov.flightmaster.skyscannerservice.repositories.IAgentRepository;
@@ -42,14 +42,14 @@ public class DatabaseService implements IDatabaseService {
     }
 
     @Override
-    public FlightRequestPollDB persistPoll(FlightRequestPollDB poll, FlightRequestPollStatus status, LocalDateTime dt) {
+    public FlightRequestPollDto persistPoll(FlightRequestPollDto poll, FlightRequestPollStatus status, LocalDateTime dt) {
         poll.setFlightRequestPollStatus(status);
         poll.setPollStatusDateTime(dt);
         return flightRequestPollRepository.saveAndFlush(poll);
     }
 
     @Override
-    public FlightRequestPollDB persistPoll(FlightRequestPollDB poll, FlightRequestPollStatus status) {
+    public FlightRequestPollDto persistPoll(FlightRequestPollDto poll, FlightRequestPollStatus status) {
         return persistPoll(poll, status, LocalDateTime.now());
     }
 

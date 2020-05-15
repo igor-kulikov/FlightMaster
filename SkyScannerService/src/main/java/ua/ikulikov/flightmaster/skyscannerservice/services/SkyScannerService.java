@@ -19,11 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import ua.ikulikov.flightmaster.skyscannerservice.SkyScannerServiceException;
-import ua.ikulikov.flightmaster.skyscannerservice.config.AmqpProperty;
+import ua.ikulikov.flightmaster.skyscannerservice.config.AmqpPropertyConfig;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightPollStatusMQ;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollStatus;
 import ua.ikulikov.flightmaster.skyscannerservice.entities.flightdata.FlightData;
-import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDB;
+import ua.ikulikov.flightmaster.skyscannerservice.entities.FlightRequestPollDto;
 import ua.ikulikov.flightmaster.skyscannerservice.utils.Utils;
 
 import java.time.LocalDate;
@@ -37,7 +37,7 @@ public class SkyScannerService implements ISkyScannerService {
     private final DatabaseService databaseService;
     private final RestTemplate rest;
     private final AmqpTemplate amqpEventsPublisher;
-    private final AmqpProperty amqpProps;
+    private final AmqpPropertyConfig amqpProps;
 
     private Logger logger = Logger.getLogger(SkyScannerService.class);
 
@@ -76,7 +76,7 @@ public class SkyScannerService implements ISkyScannerService {
      */
     @Override
     @Async("taskExecutor")
-    public void proceedFlightPollRequest(FlightRequestPollDB poll) {
+    public void proceedFlightPollRequest(FlightRequestPollDto poll) {
         poll = databaseService.persistPoll(poll, FlightRequestPollStatus.IN_PROGRESS);
 
         try {
@@ -96,7 +96,7 @@ public class SkyScannerService implements ISkyScannerService {
     }
 
     @Transactional
-    public void proceedSkyScannerPolling(FlightRequestPollDB poll) throws SkyScannerServiceException {
+    public void proceedSkyScannerPolling(FlightRequestPollDto poll) throws SkyScannerServiceException {
         final Thread currentThread = Thread.currentThread();
         final String origThreadName = currentThread.getName();
 
@@ -127,7 +127,7 @@ public class SkyScannerService implements ISkyScannerService {
      * @param pollRequest flight request's details
      * @return sessionKey identifier of created session in SkyScanner service
      */
-    private String createSession(FlightRequestPollDB pollRequest) throws SkyScannerServiceException {
+    private String createSession(FlightRequestPollDto pollRequest) throws SkyScannerServiceException {
         HttpResponse<JsonNode> response;
 
         int attemptCounter = 0;

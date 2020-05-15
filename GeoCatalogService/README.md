@@ -1,4 +1,4 @@
-# GeoCatalogService
+# GeoCatalogMicroservice
 
 Geo Catalog Service provides access to Places that SkyScanner supports:
 - continent
@@ -6,5 +6,5 @@ Geo Catalog Service provides access to Places that SkyScanner supports:
 - city
 - airport
 
-End-points:
+REST API end-points:
 - GET '/getChild/{place}' - return list of Airport located in specified place, e.g. country, city

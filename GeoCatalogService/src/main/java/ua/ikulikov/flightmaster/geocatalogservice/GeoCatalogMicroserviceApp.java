@@ -6,9 +6,9 @@ import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
 @SpringBootApplication
 @EnableEurekaClient
-public class GeoCatalogServiceApp {
+public class GeoCatalogMicroserviceApp {
 
 	public static void main(String[] args) {
-		SpringApplication.run(GeoCatalogServiceApp.class, args);
+		SpringApplication.run(GeoCatalogMicroserviceApp.class, args);
 	}
 }

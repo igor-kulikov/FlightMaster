@@ -26,7 +26,7 @@ public class FlightRequestPollMQ {
     private Integer infants;
     private Boolean groupPricing;
 
-    public FlightRequestPollMQ(FlightRequestPollDB poll) {
+    public FlightRequestPollMQ(FlightRequestPollDto poll) {
         this.pollId = poll.getId();
         this.requestId = poll.getRequestId();
         this.country = poll.getCountry();
